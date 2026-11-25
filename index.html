@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A Couple Words — By A Couple Teachers</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka & Inter for playful, high-contrast legibility -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Base Setup and Official Background Image */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-image: url('https://i.imgur.com/1kIHsUn.jpeg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      min-height: 100dvh;
+      color: #ffffff;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .font-game {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Full-viewport backdrop layer for high text legibility */
+    .bg-backdrop-overlay {
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0.78) 100%);
+      min-height: 100dvh;
+      width: 100%;
+    }
+
+    /* Glassmorphism effect for cards and panels */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+    }
+
+    .glass-card-light {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+
+    /* Responsive Fluid Board Tiles (adapts seamlessly from 360px phones to large desktops) */
+    .wordle-tile {
+      width: var(--tile-size, clamp(42px, 6.8dvh, 74px));
+      height: var(--tile-size, clamp(42px, 6.8dvh, 74px));
+      font-size: calc(var(--tile-size, clamp(42px, 6.8dvh, 74px)) * 0.52);
+      background-size: 100% 100%;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-image: url('https://i.imgur.com/Ycorjxl.png'); /* Neutral */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 3px 6px rgba(0, 0, 0, 0.8), 0 0 3px rgba(0, 0, 0, 0.95);
+      user-select: none;
+      transition: transform 0.15s ease;
+    }
+
+    .wordle-tile.state-empty {
+      background-image: url('https://i.imgur.com/Ycorjxl.png');
+    }
+    .wordle-tile.state-filled {
+      background-image: url('https://i.imgur.com/Ycorjxl.png');
+      transform: scale(1.04);
+    }
+    .wordle-tile.state-correct {
+      background-image: url('https://i.imgur.com/06dWMMt.png');
+    }
+    .wordle-tile.state-present {
+      background-image: url('https://i.imgur.com/2V0LaYj.png');
+    }
+    .wordle-tile.state-absent {
+      background-image: url('https://i.imgur.com/xtlsoWl.png');
+    }
+
+    /* Pop, Flip & Shake Animations */
+    @keyframes tilePop {
+      0% { transform: scale(0.85); }
+      50% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+    .animate-pop {
+      animation: tilePop 0.18s ease-out;
+    }
+
+    @keyframes tileFlip {
+      0% { transform: rotateX(0deg) scale(1); }
+      50% { transform: rotateX(90deg) scale(1.05); }
+      100% { transform: rotateX(0deg) scale(1); }
+    }
+    .animate-flip {
+      animation: tileFlip 0.45s ease-in-out;
+    }
+
+    @keyframes rowShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: rowShake 0.35s ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.75); }
+      50% { box-shadow: 0 0 22px 5px rgba(52, 211, 153, 0.9); }
+    }
+    .turn-active-glow {
+      animation: pulseGlow 2s infinite;
+      border-color: #34d399 !important;
+    }
+
+    /* Virtual Keyboard */
+    .kb-key {
+      font-family: 'Fredoka', sans-serif;
+      transition: all 0.12s ease;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .kb-key:active:not(:disabled) {
+      transform: translateY(2px) scale(0.96);
+    }
+
+    /* Mobile Full-Screen Compact Adjustments */
+    @media (max-width: 640px) {
+      body {
+        background-attachment: scroll;
+      }
+    }
+
+    /* Subtle Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-backdrop-overlay flex flex-col justify-between p-2 sm:p-4 md:p-5">
+
+    <!-- Floating Toast Notification -->
+    <div id="toast-container" class="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none w-11/12 max-w-lg"></div>
+
+    <!-- Global Header -->
+    <header class="w-full max-w-7xl mx-auto flex items-center justify-between mb-2 sm:mb-3 px-1">
+      <div class="flex items-center gap-2.5 sm:gap-3.5">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/25 border border-emerald-400/50 flex items-center justify-center shadow-lg flex-shrink-0">
+          <span class="font-game text-xl sm:text-2xl font-bold text-emerald-300">AC</span>
+        </div>
+        <div>
+          <h1 class="font-game text-xl sm:text-3xl font-bold tracking-wide text-white drop-shadow leading-tight">
+            A COUPLE <span class="text-amber-300">WORDS</span>
+          </h1>
+          <p class="text-[11px] sm:text-sm text-slate-300 font-medium">by A Couple Teachers • ESL Duel</p>
+        </div>
+      </div>
+
+      <div id="header-room-badge" class="hidden items-center gap-1.5 sm:gap-2.5">
+        <div class="glass-panel px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2.5 text-xs sm:text-base">
+          <span class="text-slate-300 font-medium hidden xs:inline">Room:</span>
+          <strong id="header-room-code" class="font-game text-amber-300 tracking-widest text-sm sm:text-lg">-----</strong>
+          <button onclick="copyRoomCode()" title="Copy room code" class="p-1 hover:bg-white/10 rounded-lg transition text-emerald-300">
+            📋
+          </button>
+        </div>
+        <button onclick="confirmLeaveRoom()" class="glass-panel hover:bg-rose-500/30 border-rose-400/40 text-rose-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-xs sm:text-base font-bold transition">
+          Leave
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="w-full max-w-7xl mx-auto flex-1 flex flex-col items-center justify-center">
+
+      <!-- ========================================================= -->
+      <!-- SCREEN 1: HOME / MODE & ROOM SELECTION                    -->
+      <!-- ========================================================= -->
+      <section id="screen-home" class="w-full max-w-xl glass-panel rounded-3xl p-5 sm:p-9 transition-all my-auto">
+        <div class="text-center mb-6">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-xs sm:text-sm font-bold uppercase tracking-wider mb-2.5">
+            A Couple Teachers • Classroom Game
+          </span>
+          <h2 class="font-game text-3xl sm:text-4xl font-bold text-white">A Couple Words</h2>
+          <p class="text-slate-200 text-sm sm:text-base mt-2 leading-relaxed">
+            Pick a secret English word (4 to 6 letters) and challenge your partner in alternating turns!
+          </p>
+        </div>
+
+        <!-- Online Connection Status -->
+        <div id="connection-status-bar" class="mb-5 px-4 py-2.5 rounded-2xl bg-slate-900/65 border border-white/15 flex items-center justify-center gap-2.5 text-xs sm:text-sm text-slate-200">
+          <span id="conn-dot" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="conn-text">Connecting to multiplayer server...</span>
+        </div>
+
+        <div class="space-y-4 sm:space-y-5">
+          <!-- Create New Online Room Button -->
+          <button id="btn-create-room" onclick="handleCreateRoom()" class="w-full py-3.5 sm:py-4 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-game text-lg sm:text-xl font-bold shadow-lg shadow-emerald-950/50 border border-emerald-300/35 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2.5">
+            <span>🚀 Create Room (2 Players Online)</span>
+          </button>
+
+          <!-- Join Existing Room -->
+          <div class="glass-card-light rounded-2xl p-4 sm:p-5">
+            <label class="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200 mb-2">
+              Or enter an existing room code:
+            </label>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                id="input-join-code"
+                maxlength="6"
+                placeholder="e.g. A7K9P"
+                class="flex-1 min-w-0 bg-slate-900/85 border border-white/25 rounded-xl px-3.5 py-3 text-white font-game text-lg sm:text-xl uppercase tracking-widest placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
+              />
+              <button id="btn-join-room" onclick="handleJoinRoom()" class="px-4 sm:px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-game font-bold text-base sm:text-lg transition shadow-md flex-shrink-0">
+                Join Room
+              </button>
+            </div>
+          </div>
+
+          <div class="relative flex py-0.5 items-center">
+            <div class="flex-grow border-t border-white/15"></div>
+            <span class="flex-shrink mx-3 text-xs text-slate-300 uppercase font-bold tracking-wider">or play on one device</span>
+            <div class="flex-grow border-t border-white/15"></div>
+          </div>
+
+          <!-- Local 1-Screen Mode -->
+          <button onclick="startLocalMode()" class="w-full py-3.5 px-5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/25 text-slate-100 font-bold text-sm sm:text-base transition flex items-center justify-center gap-2">
+            <span>🖥️ Local Mode (1 Screen Pass-and-Play)</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- SCREEN 2: PLAYER SETUP (AVATAR, NICKNAME, SECRET WORD)    -->
+      <!-- ========================================================= -->
+      <section id="screen-setup" class="hidden w-full max-w-3xl glass-panel rounded-3xl p-5 sm:p-8 my-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-white/15">
+          <div>
+            <span id="setup-player-badge" class="inline-block px-3.5 py-1 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-xs sm:text-sm font-bold mb-1">
+              Player Setup
+            </span>
+            <h2 id="setup-title" class="font-game text-2xl sm:text-3xl font-bold text-white">Prepare Your Word</h2>
+          </div>
+          <div id="setup-room-box" class="bg-slate-900/80 border border-amber-400/40 rounded-2xl px-4 py-2 text-center self-start sm:self-auto">
+            <span class="block text-[11px] uppercase tracking-wider text-slate-400">Room Code</span>
+            <div class="flex items-center justify-center gap-2">
+              <span id="setup-room-code" class="font-game text-xl sm:text-2xl font-bold text-amber-300 tracking-widest">-----</span>
+              <button onclick="copyRoomCode()" class="text-xs font-bold bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg text-white transition">
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <form id="player-setup-form" onsubmit="handlePlayerSetupSubmit(event)" class="space-y-5">
+          <!-- Nickname -->
+          <div>
+            <label for="input-nickname" class="block text-sm sm:text-base font-bold text-slate-100 mb-1.5">
+              1. Your Nickname <span class="text-rose-400">*</span>
+            </label>
+            <input
+              type="text"
+              id="input-nickname"
+              maxlength="16"
+              required
+              placeholder="e.g. Teacher Leo, Sarah..."
+              class="w-full bg-slate-900/85 border border-white/25 rounded-2xl px-4 py-3 text-white text-base sm:text-lg font-semibold placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          <!-- 8 Avatars Selection -->
+          <div>
+            <label class="block text-sm sm:text-base font-bold text-slate-100 mb-2">
+              2. Choose Your Avatar <span class="text-rose-400">*</span>
+            </label>
+            <div id="avatar-grid" class="grid grid-cols-4 sm:grid-cols-8 gap-2.5 sm:gap-3">
+              <!-- Populated via JS with all 8 official avatars -->
+            </div>
+          </div>
+
+          <!-- Secret Word (4 to 6 letters) -->
+          <div class="glass-card-light rounded-2xl p-4 sm:p-5 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <label for="input-secret-word" class="text-sm sm:text-base font-bold text-amber-300">
+                3. Secret Word (4–6 letters) <span class="text-rose-400">*</span>
+              </label>
+              <span id="word-validation-badge" class="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300">
+                0/6 letters
+              </span>
+            </div>
+
+            <div class="relative">
+              <input
+                type="password"
+                id="input-secret-word"
+                maxlength="6"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Type secret word (e.g. APPLE)"
+                oninput="validateSecretWordInput(this)"
+                class="w-full bg-slate-950/90 border border-white/25 rounded-2xl px-4 py-3 pr-14 text-white font-game text-xl sm:text-2xl tracking-[0.25em] uppercase placeholder:text-slate-600 placeholder:tracking-normal placeholder:font-sans placeholder:text-sm sm:placeholder:text-base focus:outline-none focus:border-amber-400"
+              />
+              <button
+                type="button"
+                onclick="toggleSecretWordVisibility()"
+                id="btn-toggle-word"
+                title="Show / Hide secret word"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-xl text-slate-300 hover:text-white rounded-lg"
+              >
+                👁️
+              </button>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-300">
+              Letters <strong>A–Z</strong> only (no accents, numbers, or spaces). Your opponent will try to guess this word!
+            </p>
+          </div>
+
+          <!-- Hint -->
+          <div>
+            <label for="input-hint" class="block text-sm sm:text-base font-bold text-slate-100 mb-1.5">
+              4. Hint (unlocks on 3rd attempt)
+            </label>
+            <input
+              type="text"
+              id="input-hint"
+              maxlength="100"
+              placeholder="e.g. It is a red fruit used to make pie..."
+              class="w-full bg-slate-900/85 border border-white/25 rounded-2xl px-4 py-3 text-white text-sm sm:text-base placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          <button
+            type="submit"
+            id="btn-confirm-setup"
+            class="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-game text-lg sm:text-xl font-bold shadow-lg border border-emerald-300/35 transition transform hover:-translate-y-0.5"
+          >
+            ✅ Ready to Play!
+          </button>
+        </form>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- SCREEN 3: WAITING ROOM (WAITING FOR OPPONENT)             -->
+      <!-- ========================================================= -->
+      <section id="screen-waiting" class="hidden w-full max-w-xl glass-panel rounded-3xl p-6 sm:p-9 text-center my-auto">
+        <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-3xl sm:text-4xl animate-bounce">
+          ⏳
+        </div>
+        <h2 class="font-game text-2xl sm:text-3xl font-bold text-white mb-2">Waiting for Opponent...</h2>
+        <p class="text-slate-200 text-sm sm:text-base mb-5">
+          Share the room code below so your partner can join and pick their secret word!
+        </p>
+
+        <div class="bg-slate-950/85 border-2 border-dashed border-amber-400/50 rounded-2xl p-4 sm:p-5 mb-5">
+          <span class="text-xs uppercase tracking-widest text-slate-400 block mb-1.5">Room Code</span>
+          <div class="flex items-center justify-center gap-3">
+            <span id="waiting-room-code" class="font-game text-3xl sm:text-5xl font-bold text-amber-300 tracking-[0.2em]">-----</span>
+            <button onclick="copyRoomCode()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm transition">
+              Copy Code
+            </button>
+          </div>
+        </div>
+
+        <!-- Status of Both Players -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
+          <div id="wait-p1-card" class="glass-card-light rounded-2xl p-3.5 flex items-center gap-3">
+            <img id="wait-p1-avatar" src="https://i.imgur.com/Keqnegd.png" alt="Avatar P1" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-white/30 bg-slate-800 flex-shrink-0" />
+            <div class="min-w-0">
+              <p id="wait-p1-name" class="font-game font-bold text-base sm:text-lg text-white truncate">Player 1</p>
+              <span id="wait-p1-status" class="text-xs sm:text-sm text-emerald-300 font-semibold">✅ Ready!</span>
+            </div>
+          </div>
+
+          <div id="wait-p2-card" class="glass-card-light rounded-2xl p-3.5 flex items-center gap-3">
+            <img id="wait-p2-avatar" src="https://i.imgur.com/WkVtlkY.png" alt="Avatar P2" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-white/20 bg-slate-800 opacity-50 flex-shrink-0" />
+            <div class="min-w-0">
+              <p id="wait-p2-name" class="font-game font-bold text-base sm:text-lg text-slate-400 truncate">Waiting...</p>
+              <span id="wait-p2-status" class="text-xs sm:text-sm text-amber-300 font-semibold">Connecting...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- SCREEN 4: FULL-SCREEN RESPONSIVE GAME BOARD               -->
+      <!-- ========================================================= -->
+      <section id="screen-game" class="hidden w-full flex-1 flex flex-col justify-between items-center gap-2 sm:gap-3">
+
+        <!-- Top Section: Large Player HUD Cards + Turn Banner + Hint -->
+        <div class="w-full max-w-6xl space-y-2 sm:space-y-2.5">
+          <!-- Player HUD Cards (2 columns even on mobile so both avatars & nicknames stay side-by-side & bold) -->
+          <div class="w-full grid grid-cols-2 gap-2 sm:gap-4">
+            <!-- Player 1 Card -->
+            <div id="hud-p1-card" class="glass-panel rounded-2xl sm:rounded-3xl p-2 sm:p-3.5 border-2 border-white/20 transition-all flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 sm:gap-3.5 min-w-0">
+                <div class="relative flex-shrink-0">
+                  <img id="hud-p1-avatar" src="https://i.imgur.com/Keqnegd.png" alt="Player 1" class="w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl sm:rounded-2xl object-cover border-2 border-white/40 bg-slate-800 shadow-lg" />
+                  <span id="hud-p1-you-tag" class="hidden absolute -bottom-1.5 -right-1.5 bg-sky-500 text-white text-[10px] sm:text-xs font-extrabold px-1.5 py-0.5 rounded-md sm:rounded-lg shadow-md border border-sky-200/40">YOU</span>
+                </div>
+                <div class="min-w-0">
+                  <p id="hud-p1-name" class="font-game text-sm sm:text-xl md:text-2xl font-bold text-white truncate drop-shadow leading-tight">Player 1</p>
+                  <p id="hud-p1-progress" class="text-xs sm:text-sm md:text-base text-slate-200 mt-0.5">Tries: <strong>0/6</strong></p>
+                  <p id="hud-p1-state-label" class="text-[11px] sm:text-xs font-bold text-emerald-300 mt-0.5 hidden truncate"></p>
+                </div>
+              </div>
+              <div id="hud-p1-turn-badge" class="hidden flex-shrink-0 items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-emerald-500/25 border border-emerald-400 text-emerald-200 text-[11px] sm:text-sm font-bold whitespace-nowrap">
+                🎯 Turn
+              </div>
+            </div>
+
+            <!-- Player 2 Card -->
+            <div id="hud-p2-card" class="glass-panel rounded-2xl sm:rounded-3xl p-2 sm:p-3.5 border-2 border-white/20 transition-all flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 sm:gap-3.5 min-w-0">
+                <div class="relative flex-shrink-0">
+                  <img id="hud-p2-avatar" src="https://i.imgur.com/WkVtlkY.png" alt="Player 2" class="w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl sm:rounded-2xl object-cover border-2 border-white/40 bg-slate-800 shadow-lg" />
+                  <span id="hud-p2-you-tag" class="hidden absolute -bottom-1.5 -right-1.5 bg-sky-500 text-white text-[10px] sm:text-xs font-extrabold px-1.5 py-0.5 rounded-md sm:rounded-lg shadow-md border border-sky-200/40">YOU</span>
+                </div>
+                <div class="min-w-0">
+                  <p id="hud-p2-name" class="font-game text-sm sm:text-xl md:text-2xl font-bold text-white truncate drop-shadow leading-tight">Player 2</p>
+                  <p id="hud-p2-progress" class="text-xs sm:text-sm md:text-base text-slate-200 mt-0.5">Tries: <strong>0/6</strong></p>
+                  <p id="hud-p2-state-label" class="text-[11px] sm:text-xs font-bold text-emerald-300 mt-0.5 hidden truncate"></p>
+                </div>
+              </div>
+              <div id="hud-p2-turn-badge" class="hidden flex-shrink-0 items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-emerald-500/25 border border-emerald-400 text-emerald-200 text-[11px] sm:text-sm font-bold whitespace-nowrap">
+                🎯 Turn
+              </div>
+            </div>
+          </div>
+
+          <!-- Turn Status Banner + Board View Switcher -->
+          <div class="w-full glass-panel rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div id="turn-banner" class="flex items-center gap-2 text-xs sm:text-base md:text-lg font-bold text-emerald-300">
+              <span id="turn-banner-dot" class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
+              <span id="turn-banner-text">Your Turn!</span>
+            </div>
+
+            <!-- Switch between My Board and Opponent's Board -->
+            <div id="board-view-switcher" class="flex items-center bg-slate-950/75 p-1 rounded-xl border border-white/15 text-xs sm:text-sm ml-auto">
+              <button id="tab-my-board" onclick="switchBoardView('mine')" class="px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg font-bold bg-emerald-500 text-slate-950 transition">
+                My Board
+              </button>
+              <button id="tab-opp-board" onclick="switchBoardView('opponent')" class="px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition">
+                Opponent
+              </button>
+            </div>
+          </div>
+
+          <!-- Hint Box (Unlocks on 3rd attempt) -->
+          <div id="hint-box" class="w-full glass-panel rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2 sm:py-2.5 border border-amber-400/35 flex items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span id="hint-icon" class="text-lg sm:text-2xl flex-shrink-0">🔒</span>
+              <div class="min-w-0">
+                <span id="hint-label" class="block text-[10px] sm:text-xs uppercase tracking-wider font-bold text-amber-300">
+                  Hint — Locked
+                </span>
+                <p id="hint-content" class="text-xs sm:text-sm md:text-base text-slate-200 truncate sm:whitespace-normal">
+                  Hint locked until attempt #3!
+                </p>
+              </div>
+            </div>
+            <span id="hint-counter-badge" class="flex-shrink-0 text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-lg sm:rounded-xl bg-slate-900/85 text-slate-200 border border-white/15">
+              Attempt 1/6
+            </span>
+          </div>
+        </div>
+
+        <!-- Center Section: Responsive Fluid Wordle Grid -->
+        <div class="w-full flex-1 flex flex-col items-center justify-center min-h-0 py-0.5">
+          <div id="board-subtitle" class="text-xs sm:text-sm md:text-base text-slate-200 mb-1.5 font-medium text-center">
+            Guessing <strong id="target-owner-name" class="text-amber-300">Opponent</strong>'s word (<span id="target-word-length">5</span> letters)
+          </div>
+          <div id="wordle-board" class="grid gap-1.5 sm:gap-2.5 p-2.5 sm:p-4 glass-panel rounded-2xl sm:rounded-3xl">
+            <!-- Tiles generated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- Bottom Section: Full-Width Touch-Friendly Virtual QWERTY Keyboard -->
+        <div id="virtual-keyboard" class="w-full max-w-4xl glass-panel rounded-2xl sm:rounded-3xl p-1.5 sm:p-3.5 space-y-1.5 sm:space-y-2 select-none">
+          <!-- Keyboard rows generated via JS -->
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- FINAL RESULTS / GAME OVER MODAL (BOTH PLAYERS FINISHED)   -->
+    <!-- ========================================================= -->
+    <div id="modal-gameover" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div class="w-full max-w-2xl glass-panel rounded-3xl p-5 sm:p-9 border-2 border-amber-400/45 text-center space-y-5 animate-pop my-auto">
+        <div id="gameover-emoji" class="text-5xl sm:text-6xl">🏆</div>
+        <div>
+          <span class="inline-block px-3.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5">
+            A Couple Words • Match Complete
+          </span>
+          <h2 id="gameover-title" class="font-game text-2xl sm:text-4xl font-bold text-white">Victory!</h2>
+          <p id="gameover-subtitle" class="text-slate-200 text-sm sm:text-base mt-1.5">Great vocabulary battle!</p>
+        </div>
+
+        <!-- Reveal Both Secret Words & Results -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
+          <div class="glass-card-light rounded-2xl p-4 border border-white/20">
+            <div class="flex items-center gap-3 mb-2.5">
+              <img id="res-p1-avatar" src="https://i.imgur.com/Keqnegd.png" class="w-12 h-12 rounded-xl object-cover border border-white/30" />
+              <span id="res-p1-name" class="font-game font-bold text-lg text-white truncate">Player 1</span>
+            </div>
+            <p class="text-xs text-slate-400 uppercase font-bold">Secret word chosen:</p>
+            <p id="res-p1-word" class="font-game text-2xl font-bold text-emerald-300 tracking-widest mt-0.5">APPLE</p>
+            <p id="res-p1-hint" class="text-xs sm:text-sm text-slate-300 italic mt-1">"Hint here"</p>
+            <p id="res-p1-score" class="text-sm text-amber-300 font-bold mt-2.5 pt-2 border-t border-white/10">Solved in 3/6</p>
+          </div>
+
+          <div class="glass-card-light rounded-2xl p-4 border border-white/20">
+            <div class="flex items-center gap-3 mb-2.5">
+              <img id="res-p2-avatar" src="https://i.imgur.com/WkVtlkY.png" class="w-12 h-12 rounded-xl object-cover border border-white/30" />
+              <span id="res-p2-name" class="font-game font-bold text-lg text-white truncate">Player 2</span>
+            </div>
+            <p class="text-xs text-slate-400 uppercase font-bold">Secret word chosen:</p>
+            <p id="res-p2-word" class="font-game text-2xl font-bold text-emerald-300 tracking-widest mt-0.5">HOUSE</p>
+            <p id="res-p2-hint" class="text-xs sm:text-sm text-slate-300 italic mt-1">"Hint here"</p>
+            <p id="res-p2-score" class="text-sm text-amber-300 font-bold mt-2.5 pt-2 border-t border-white/10">Solved in 4/6</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-1">
+          <button onclick="handlePlayAgain()" class="flex-1 py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-game text-lg font-bold shadow-lg transition">
+            🔄 Next Round (Same Room)
+          </button>
+          <button onclick="confirmLeaveRoom()" class="py-3.5 sm:py-4 px-6 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-base transition">
+            Leave Room
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (No browser alert/confirm) -->
+    <div id="modal-confirm" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="w-full max-w-sm glass-panel rounded-3xl p-6 text-center space-y-4">
+        <h3 id="confirm-title" class="font-game text-2xl font-bold text-white">Leave Room?</h3>
+        <p id="confirm-message" class="text-base text-slate-300">You will return to the main menu.</p>
+        <div class="flex gap-3 justify-center pt-1">
+          <button onclick="closeConfirmModal()" class="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm">
+            Cancel
+          </button>
+          <button id="confirm-yes-btn" class="flex-1 py-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subtle Footer -->
+    <footer class="w-full text-center text-[11px] sm:text-xs text-slate-300/80 mt-2">
+      A Couple Words • By A Couple Teachers
+    </footer>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MAIN SCRIPT WITH FIREBASE REALTIME & GAME LOGIC           -->
+  <!-- ========================================================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // =========================================================================
+    // 1. OFFICIAL ASSETS PROVIDED BY USER
+    // =========================================================================
+    const AVATARS = [
+      "https://i.imgur.com/Keqnegd.png",
+      "https://i.imgur.com/WkVtlkY.png",
+      "https://i.imgur.com/d4UVeBV.png",
+      "https://i.imgur.com/Fqr3nEd.png",
+      "https://i.imgur.com/0v7gj8n.png",
+      "https://i.imgur.com/O3iAe0e.png",
+      "https://i.imgur.com/sscpdxb.png",
+      "https://i.imgur.com/Fv2yKRj.png"
+    ];
+
+    const TILE_IMAGES = {
+      neutral: "https://i.imgur.com/Ycorjxl.png",
+      correct: "https://i.imgur.com/06dWMMt.png",
+      present: "https://i.imgur.com/2V0LaYj.png",
+      absent:  "https://i.imgur.com/xtlsoWl.png"
+    };
+
+    const MAX_ATTEMPTS = 6;
+
+    // =========================================================================
+    // 2. GLOBAL APPLICATION STATE
+    // =========================================================================
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let appId = typeof __app_id !== 'undefined' ? __app_id : 'a-couple-words';
+    let firebaseReady = false;
+
+    let gameMode = 'online'; // 'online' | 'local'
+    let roomCode = null;
+    let myRole = null; // 'p1' | 'p2'
+    let unsubscribeRoom = null;
+
+    // Synchronized room state (shared structure for Online and Local modes)
+    let roomState = null;
+
+    // Local typing buffer before pressing ENTER
+    let currentGuess = "";
+    let selectedAvatarUrl = AVATARS[0];
+    let localSetupStep = 'p1'; // In local mode: 'p1' or 'p2'
+    let boardViewMode = 'mine'; // 'mine' | 'opponent'
+    let lastAnimatedRow = { p1: -1, p2: -1 };
+
+    // =========================================================================
+    // 3. FIREBASE INITIALIZATION (WITH GRACEFUL LOCAL FALLBACK)
+    // =========================================================================
+    async function initFirebase() {
+      const dot = document.getElementById('conn-dot');
+      const text = document.getElementById('conn-text');
+
+      try {
+        if (typeof __firebase_config === 'undefined') {
+          throw new Error("Online configuration not detected.");
+        }
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        currentUser = auth.currentUser;
+        firebaseReady = true;
+
+        dot.className = "w-3 h-3 rounded-full bg-emerald-400";
+        text.textContent = "Online Multiplayer Ready!";
+      } catch (err) {
+        console.warn("Firebase unavailable, local mode enabled:", err);
+        firebaseReady = false;
+        dot.className = "w-3 h-3 rounded-full bg-amber-400";
+        text.textContent = "Local Mode available (use 1-Screen Pass-and-Play)";
+      }
+    }
+
+    // Strict Firestore path helper: /artifacts/{appId}/public/data/rooms/{roomCode}
+    function getRoomDocRef(code) {
+      return doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+    }
+
+    // =========================================================================
+    // 4. UI HELPERS (SCREENS, TOASTS, AVATAR SELECTOR)
+    // =========================================================================
+    function showScreen(screenId) {
+      ['screen-home', 'screen-setup', 'screen-waiting', 'screen-game'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+
+      const headerBadge = document.getElementById('header-room-badge');
+      if (screenId === 'screen-home') {
+        headerBadge.classList.add('hidden');
+        headerBadge.classList.remove('flex');
+      } else {
+        headerBadge.classList.remove('hidden');
+        headerBadge.classList.add('flex');
+        document.getElementById('header-room-code').textContent = roomCode || 'LOCAL';
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        info: 'bg-slate-900/95 border-white/25 text-white',
+        success: 'bg-emerald-600/95 border-emerald-300 text-white',
+        error: 'bg-rose-600/95 border-rose-300 text-white',
+        warning: 'bg-amber-500/95 border-amber-200 text-slate-950'
+      };
+      toast.className = `px-5 py-3 rounded-2xl border shadow-xl font-bold text-sm sm:text-base text-center animate-pop ${colors[type] || colors.info}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => toast.remove(), 260);
+      }, 3000);
+    }
+
+    function renderAvatarSelector() {
+      const grid = document.getElementById('avatar-grid');
+      grid.innerHTML = '';
+      AVATARS.forEach((url, index) => {
+        const isSelected = url === selectedAvatarUrl;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => {
+          selectedAvatarUrl = url;
+          renderAvatarSelector();
+        };
+        btn.className = `relative rounded-2xl overflow-hidden aspect-square border-2 transition transform hover:scale-105 bg-slate-800 ${
+          isSelected
+            ? 'border-emerald-400 ring-4 ring-emerald-400/45 scale-105'
+            : 'border-white/25 opacity-85 hover:opacity-100'
+        }`;
+        btn.innerHTML = `
+          <img src="${url}" alt="Avatar ${index + 1}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/120x120/1e293b/ffffff?text=P${index+1}'" />
+          ${isSelected ? '<span class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-emerald-400 text-slate-950 text-xs font-extrabold flex items-center justify-center shadow">✓</span>' : ''}
+        `;
+        grid.appendChild(btn);
+      });
+    }
+
+    // Real-time validation for Secret Word (4 to 6 letters A-Z)
+    window.validateSecretWordInput = function(input) {
+      const cleaned = input.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 6);
+      input.value = cleaned;
+
+      const badge = document.getElementById('word-validation-badge');
+      const len = cleaned.length;
+
+      if (len === 0) {
+        badge.textContent = '0/6 letters';
+        badge.className = 'text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300';
+      } else if (len < 4) {
+        badge.textContent = `${len}/6 letters (min 4)`;
+        badge.className = 'text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-amber-500/25 text-amber-300 border border-amber-400/35';
+      } else {
+        badge.textContent = `${len} letters — Valid! ✓`;
+        badge.className = 'text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/45';
+      }
+    };
+
+    window.toggleSecretWordVisibility = function() {
+      const input = document.getElementById('input-secret-word');
+      const btn = document.getElementById('btn-toggle-word');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    };
+
+    window.copyRoomCode = function() {
+      if (!roomCode) return;
+      const temp = document.createElement('textarea');
+      temp.value = roomCode;
+      document.body.appendChild(temp);
+      temp.select();
+      try {
+        document.execCommand('copy');
+        showToast(`Room code "${roomCode}" copied! Share it with your opponent.`, 'success');
+      } catch (e) {
+        showToast(`Room code: ${roomCode}`, 'info');
+      }
+      document.body.removeChild(temp);
+    };
+
+    // =========================================================================
+    // 5. ROOM CREATION & JOINING (ONLINE & LOCAL)
+    // =========================================================================
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    function createEmptyRoomObject(code, p1Uid = 'local-p1') {
+      return {
+        code,
+        status: 'setup', // 'setup' | 'playing' | 'finished'
+        currentTurn: 'p1', // 'p1' | 'p2'
+        roundNumber: 1,
+        p1: {
+          uid: p1Uid,
+          nickname: '',
+          avatar: AVATARS[0],
+          secretWord: '',
+          hint: '',
+          ready: false,
+          guesses: [], // Guesses trying to solve P2's word
+          solved: false,
+          outOfAttempts: false,
+          finished: false
+        },
+        p2: {
+          uid: null,
+          nickname: '',
+          avatar: AVATARS[1],
+          secretWord: '',
+          hint: '',
+          ready: false,
+          guesses: [], // Guesses trying to solve P1's word
+          solved: false,
+          outOfAttempts: false,
+          finished: false
+        }
+      };
+    }
+
+    window.handleCreateRoom = async function() {
+      if (!firebaseReady || !currentUser) {
+        showToast('Online server unavailable. Please use Local Mode!', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btn-create-room');
+      btn.disabled = true;
+
+      try {
+        const newCode = generateRoomCode();
+        const initialData = createEmptyRoomObject(newCode, currentUser.uid);
+        await setDoc(getRoomDocRef(newCode), initialData);
+
+        gameMode = 'online';
+        roomCode = newCode;
+        myRole = 'p1';
+        roomState = initialData;
+
+        subscribeToRoom(newCode);
+        openSetupScreen('Player 1 (Room Host)');
+        showToast(`Room ${newCode} created!`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Error creating room. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    window.handleJoinRoom = async function() {
+      if (!firebaseReady || !currentUser) {
+        showToast('Online server unavailable. Please use Local Mode!', 'warning');
+        return;
+      }
+
+      const input = document.getElementById('input-join-code');
+      const code = input.value.trim().toUpperCase();
+      if (code.length < 4) {
+        showToast('Please enter a valid room code (e.g. A7K9P).', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btn-join-room');
+      btn.disabled = true;
+
+      try {
+        const docRef = getRoomDocRef(code);
+        const snap = await getDoc(docRef);
+
+        if (!snap.exists()) {
+          showToast('Room not found! Double-check the code.', 'error');
+          btn.disabled = false;
+          return;
+        }
+
+        const data = snap.data();
+
+        if (data.p1 && data.p1.uid === currentUser.uid) {
+          myRole = 'p1';
+        } else if (!data.p2 || !data.p2.uid || data.p2.uid === currentUser.uid) {
+          myRole = 'p2';
+          await updateDoc(docRef, {
+            'p2.uid': currentUser.uid
+          });
+        } else {
+          showToast('This room is already full (2 players)!', 'error');
+          btn.disabled = false;
+          return;
+        }
+
+        gameMode = 'online';
+        roomCode = code;
+        roomState = data;
+
+        subscribeToRoom(code);
+        openSetupScreen(myRole === 'p1' ? 'Player 1' : 'Player 2 (Guest)');
+        showToast(`Joined room ${code}!`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Error joining room.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    window.startLocalMode = function() {
+      gameMode = 'local';
+      roomCode = 'LOCAL';
+      myRole = 'p1';
+      localSetupStep = 'p1';
+      roomState = createEmptyRoomObject('LOCAL', 'local-p1');
+      roomState.p2.uid = 'local-p2';
+
+      openSetupScreen("Player 1 (Don't let Player 2 peek!)");
+    };
+
+    function openSetupScreen(badgeLabel) {
+      document.getElementById('setup-player-badge').textContent = badgeLabel;
+      document.getElementById('setup-room-code').textContent = roomCode;
+      document.getElementById('setup-room-box').style.display = gameMode === 'local' ? 'none' : 'block';
+
+      const roleKey = gameMode === 'local' ? localSetupStep : myRole;
+      const existing = roomState?.[roleKey];
+
+      document.getElementById('input-nickname').value = existing?.nickname || '';
+      document.getElementById('input-secret-word').value = '';
+      document.getElementById('input-secret-word').type = 'password';
+      document.getElementById('btn-toggle-word').textContent = '👁️';
+      document.getElementById('input-hint').value = '';
+      validateSecretWordInput(document.getElementById('input-secret-word'));
+
+      selectedAvatarUrl = existing?.avatar || (roleKey === 'p1' ? AVATARS[0] : AVATARS[1]);
+      renderAvatarSelector();
+
+      showScreen('screen-setup');
+    }
+
+    // =========================================================================
+    // 6. PLAYER SETUP FORM SUBMISSION
+    // =========================================================================
+    window.handlePlayerSetupSubmit = async function(e) {
+      e.preventDefault();
+
+      const nickname = document.getElementById('input-nickname').value.trim();
+      const secretWord = document.getElementById('input-secret-word').value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+      const hint = document.getElementById('input-hint').value.trim();
+
+      if (!nickname) {
+        showToast('Please enter your Nickname!', 'warning');
+        return;
+      }
+      if (secretWord.length < 4 || secretWord.length > 6) {
+        showToast('Your secret word must be 4 to 6 letters long!', 'error');
+        return;
+      }
+
+      if (gameMode === 'local') {
+        roomState[localSetupStep] = {
+          ...roomState[localSetupStep],
+          nickname,
+          avatar: selectedAvatarUrl,
+          secretWord,
+          hint,
+          ready: true,
+          guesses: [],
+          solved: false,
+          outOfAttempts: false,
+          finished: false
+        };
+
+        if (localSetupStep === 'p1') {
+          localSetupStep = 'p2';
+          showToast(`${nickname} is ready! Now hand over to Player 2.`, 'success');
+          openSetupScreen("Player 2 (Don't let Player 1 peek!)");
+        } else {
+          roomState.status = 'playing';
+          roomState.currentTurn = 'p1';
+          myRole = 'p1';
+          currentGuess = '';
+          lastAnimatedRow = { p1: -1, p2: -1 };
+          enterGameScreen();
+        }
+        return;
+      }
+
+      // Online Mode (Firebase)
+      try {
+        const docRef = getRoomDocRef(roomCode);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) return;
+        const latestData = snap.data();
+
+        const updatedPlayer = {
+          ...latestData[myRole],
+          uid: currentUser.uid,
+          nickname,
+          avatar: selectedAvatarUrl,
+          secretWord,
+          hint,
+          ready: true,
+          guesses: [],
+          solved: false,
+          outOfAttempts: false,
+          finished: false
+        };
+
+        const otherRole = myRole === 'p1' ? 'p2' : 'p1';
+        const bothReady = updatedPlayer.ready && latestData[otherRole]?.ready;
+
+        await updateDoc(docRef, {
+          [myRole]: updatedPlayer,
+          status: bothReady ? 'playing' : 'setup',
+          currentTurn: 'p1'
+        });
+
+        if (!bothReady) {
+          showScreen('screen-waiting');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Error saving your setup. Please try again.', 'error');
+      }
+    };
+
+    // =========================================================================
+    // 7. REAL-TIME SYNCHRONIZATION (FIREBASE ONSNAPSHOT)
+    // =========================================================================
+    function subscribeToRoom(code) {
+      if (unsubscribeRoom) unsubscribeRoom();
+
+      unsubscribeRoom = onSnapshot(
+        getRoomDocRef(code),
+        (snapshot) => {
+          if (!snapshot.exists()) {
+            showToast('The room was closed.', 'warning');
+            resetToHome();
+            return;
+          }
+
+          const prevStatus = roomState?.status;
+          roomState = snapshot.data();
+
+          if (roomState.status === 'setup') {
+            updateWaitingRoomUI();
+            if (roomState[myRole]?.ready) {
+              showScreen('screen-waiting');
+            }
+          } else if (roomState.status === 'playing' || roomState.status === 'finished') {
+            if (prevStatus !== 'playing' && prevStatus !== 'finished') {
+              currentGuess = '';
+              lastAnimatedRow = { p1: -1, p2: -1 };
+              boardViewMode = 'mine';
+              document.getElementById('modal-gameover').classList.add('hidden');
+            }
+            enterGameScreen();
+          }
+        },
+        (error) => {
+          console.error("Real-time sync error:", error);
+          showToast('Real-time connection lost.', 'error');
+        }
+      );
+    }
+
+    function updateWaitingRoomUI() {
+      if (!roomState) return;
+      document.getElementById('waiting-room-code').textContent = roomState.code;
+
+      const p1 = roomState.p1;
+      const p2 = roomState.p2;
+
+      document.getElementById('wait-p1-name').textContent = p1.nickname || 'Player 1';
+      document.getElementById('wait-p1-avatar').src = p1.avatar || AVATARS[0];
+      document.getElementById('wait-p1-status').textContent = p1.ready ? '✅ Ready!' : '✍️ Picking word...';
+
+      if (p2 && (p2.uid || p2.nickname)) {
+        document.getElementById('wait-p2-name').textContent = p2.nickname || 'Player 2';
+        document.getElementById('wait-p2-name').className = 'font-game font-bold text-lg text-white truncate';
+        document.getElementById('wait-p2-avatar').src = p2.avatar || AVATARS[1];
+        document.getElementById('wait-p2-avatar').classList.remove('opacity-50');
+        document.getElementById('wait-p2-status').textContent = p2.ready ? '✅ Ready!' : '✍️ Picking word...';
+        document.getElementById('wait-p2-status').className = p2.ready ? 'text-sm text-emerald-300 font-semibold' : 'text-sm text-amber-300 font-semibold';
+      } else {
+        document.getElementById('wait-p2-name').textContent = 'Waiting to join...';
+        document.getElementById('wait-p2-name').className = 'font-game font-bold text-lg text-slate-400 truncate';
+        document.getElementById('wait-p2-avatar').classList.add('opacity-50');
+        document.getElementById('wait-p2-status').textContent = 'Use the code above';
+      }
+    }
+
+    // =========================================================================
+    // 8. WORDLE LOGIC (LETTER EVALUATION & BOTH-PLAYERS-FINISH RULE)
+    // =========================================================================
+    function evaluateGuess(guess, secret) {
+      const length = secret.length;
+      const result = Array(length).fill('absent');
+      const secretChars = secret.split('');
+      const guessChars = guess.split('');
+      const usedSecret = Array(length).fill(false);
+
+      // Pass 1: Exact position matches (Green / correct)
+      for (let i = 0; i < length; i++) {
+        if (guessChars[i] === secretChars[i]) {
+          result[i] = 'correct';
+          usedSecret[i] = true;
+        }
+      }
+
+      // Pass 2: Misplaced letters (Yellow / present)
+      for (let i = 0; i < length; i++) {
+        if (result[i] === 'correct') continue;
+        for (let j = 0; j < length; j++) {
+          if (!usedSecret[j] && guessChars[i] === secretChars[j]) {
+            result[i] = 'present';
+            usedSecret[j] = true;
+            break;
+          }
+        }
+      }
+
+      return result;
+    }
+
+    function isPlayerFinished(playerObj) {
+      return Boolean(playerObj.finished || playerObj.solved || playerObj.outOfAttempts || (playerObj.guesses && playerObj.guesses.length >= MAX_ATTEMPTS));
+    }
+
+    function getActiveViewerRole() {
+      if (gameMode === 'local') {
+        return roomState.currentTurn;
+      }
+      return myRole;
+    }
+
+    function isMyTurnToPlay() {
+      if (!roomState || roomState.status !== 'playing') return false;
+      const activeRole = getActiveViewerRole();
+      if (isPlayerFinished(roomState[activeRole])) return false;
+      if (gameMode === 'local') return true;
+      return roomState.currentTurn === myRole;
+    }
+
+    // =========================================================================
+    // 9. BOARD, HINT BOX & VIRTUAL KEYBOARD RENDERING
+    // =========================================================================
+    function enterGameScreen() {
+      showScreen('screen-game');
+      renderGameUI();
+    }
+
+    window.switchBoardView = function(mode) {
+      boardViewMode = mode;
+      renderGameUI();
+    };
+
+    function renderGameUI() {
+      if (!roomState) return;
+
+      const viewerRole = getActiveViewerRole();
+      const opponentRole = viewerRole === 'p1' ? 'p2' : 'p1';
+
+      if (gameMode === 'local') {
+        boardViewMode = 'mine';
+        document.getElementById('board-view-switcher').classList.add('hidden');
+      } else {
+        document.getElementById('board-view-switcher').classList.remove('hidden');
+      }
+
+      const p1 = roomState.p1;
+      const p2 = roomState.p2;
+      const p1Finished = isPlayerFinished(p1);
+      const p2Finished = isPlayerFinished(p2);
+
+      // Update Player 1 HUD Card
+      document.getElementById('hud-p1-name').textContent = p1.nickname;
+      document.getElementById('hud-p1-avatar').src = p1.avatar;
+      document.getElementById('hud-p1-progress').innerHTML = `Tries: <strong>${p1.guesses.length}/${MAX_ATTEMPTS}</strong>`;
+      document.getElementById('hud-p1-you-tag').classList.toggle('hidden', viewerRole !== 'p1');
+      updatePlayerHudStatusLabel('hud-p1-state-label', p1);
+
+      // Update Player 2 HUD Card
+      document.getElementById('hud-p2-name').textContent = p2.nickname;
+      document.getElementById('hud-p2-avatar').src = p2.avatar;
+      document.getElementById('hud-p2-progress').innerHTML = `Tries: <strong>${p2.guesses.length}/${MAX_ATTEMPTS}</strong>`;
+      document.getElementById('hud-p2-you-tag').classList.toggle('hidden', viewerRole !== 'p2');
+      updatePlayerHudStatusLabel('hud-p2-state-label', p2);
+
+      // Active Turn Glow & Badge
+      const p1Card = document.getElementById('hud-p1-card');
+      const p2Card = document.getElementById('hud-p2-card');
+      const p1Badge = document.getElementById('hud-p1-turn-badge');
+      const p2Badge = document.getElementById('hud-p2-turn-badge');
+
+      const p1Active = roomState.status === 'playing' && roomState.currentTurn === 'p1' && !p1Finished;
+      const p2Active = roomState.status === 'playing' && roomState.currentTurn === 'p2' && !p2Finished;
+
+      p1Card.classList.toggle('turn-active-glow', p1Active);
+      p2Card.classList.toggle('turn-active-glow', p2Active);
+      p1Badge.classList.toggle('hidden', !p1Active);
+      p1Badge.classList.toggle('flex', p1Active);
+      p2Badge.classList.toggle('hidden', !p2Active);
+      p2Badge.classList.toggle('flex', p2Active);
+
+      // Turn Banner Messaging (Handles single-player finished state clearly)
+      const bannerText = document.getElementById('turn-banner-text');
+      const bannerDot = document.getElementById('turn-banner-dot');
+      const viewerData = roomState[viewerRole];
+      const oppData = roomState[opponentRole];
+      const currentTurnPlayer = roomState[roomState.currentTurn];
+
+      if (roomState.status === 'finished' || (p1Finished && p2Finished)) {
+        bannerText.textContent = 'Both players have finished! Check final results.';
+        bannerDot.className = 'w-3 h-3 rounded-full bg-amber-400 flex-shrink-0';
+      } else if (gameMode === 'online' && isPlayerFinished(viewerData) && !isPlayerFinished(oppData)) {
+        // Current viewer finished early while opponent is still playing!
+        const prefix = viewerData.solved
+          ? `🎉 You solved it in ${viewerData.guesses.length}/${MAX_ATTEMPTS}!`
+          : `Out of attempts (${MAX_ATTEMPTS}/${MAX_ATTEMPTS})!`;
+        bannerText.textContent = `${prefix} Waiting for ${oppData.nickname} to finish...`;
+        bannerDot.className = 'w-3 h-3 rounded-full bg-amber-400 animate-pulse flex-shrink-0';
+      } else if (gameMode === 'local') {
+        bannerText.textContent = `${currentTurnPlayer.nickname}'s Turn!`;
+        bannerDot.className = 'w-3 h-3 rounded-full bg-emerald-400 animate-ping flex-shrink-0';
+      } else if (roomState.currentTurn === myRole) {
+        const oppWordLen = oppData.secretWord.length;
+        bannerText.textContent = `Your Turn! Guess ${oppData.nickname}'s ${oppWordLen}-letter word`;
+        bannerDot.className = 'w-3 h-3 rounded-full bg-emerald-400 animate-ping flex-shrink-0';
+      } else {
+        bannerText.textContent = `Waiting for ${currentTurnPlayer.nickname}...`;
+        bannerDot.className = 'w-3 h-3 rounded-full bg-amber-400 animate-pulse flex-shrink-0';
+      }
+
+      // Board View Tabs
+      const tabMine = document.getElementById('tab-my-board');
+      const tabOpp = document.getElementById('tab-opp-board');
+      if (boardViewMode === 'mine') {
+        tabMine.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-emerald-500 text-slate-950 transition';
+        tabOpp.className = 'px-3.5 py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition';
+      } else {
+        tabOpp.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-amber-400 text-slate-950 transition';
+        tabMine.className = 'px-3.5 py-1.5 rounded-lg font-semibold text-slate-300 hover:text-white transition';
+      }
+
+      // Determine which board is displayed
+      const guesserRole = boardViewMode === 'mine' ? viewerRole : opponentRole;
+      const secretOwnerRole = guesserRole === 'p1' ? 'p2' : 'p1';
+
+      const guesserData = roomState[guesserRole];
+      const secretOwnerData = roomState[secretOwnerRole];
+      const targetWord = secretOwnerData.secretWord;
+      const wordLen = targetWord.length;
+
+      document.getElementById('target-owner-name').textContent =
+        boardViewMode === 'mine' ? secretOwnerData.nickname : `${secretOwnerData.nickname} (Your secret word)`;
+      document.getElementById('target-word-length').textContent = wordLen;
+
+      // Update Hint Box (Unlocks on 3rd attempt -> when guesses.length >= 2)
+      updateHintBox(guesserData, secretOwnerData);
+
+      // Render Board Grid
+      renderBoardGrid(guesserRole, guesserData, targetWord);
+
+      // Render Virtual Keyboard
+      renderVirtualKeyboard(guesserData, targetWord);
+
+      // Open Game Over Modal ONLY when BOTH players have finished
+      if (roomState.status === 'finished' || (p1Finished && p2Finished)) {
+        showGameOverModal();
+      }
+    }
+
+    function updatePlayerHudStatusLabel(elementId, playerObj) {
+      const el = document.getElementById(elementId);
+      if (playerObj.solved) {
+        el.textContent = `✅ Solved in ${playerObj.guesses.length}/${MAX_ATTEMPTS}`;
+        el.className = 'text-xs sm:text-sm font-bold text-emerald-300 mt-0.5';
+        el.classList.remove('hidden');
+      } else if (playerObj.outOfAttempts || (playerObj.guesses && playerObj.guesses.length >= MAX_ATTEMPTS)) {
+        el.textContent = `❌ Out of attempts`;
+        el.className = 'text-xs sm:text-sm font-bold text-rose-300 mt-0.5';
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    function updateHintBox(guesserData, secretOwnerData) {
+      const attemptsMade = guesserData.guesses.length;
+      const currentAttemptNumber = Math.min(attemptsMade + 1, MAX_ATTEMPTS);
+      const isUnlocked = attemptsMade >= 2 || isPlayerFinished(guesserData) || roomState.status === 'finished';
+
+      const hintIcon = document.getElementById('hint-icon');
+      const hintLabel = document.getElementById('hint-label');
+      const hintContent = document.getElementById('hint-content');
+      const hintCounter = document.getElementById('hint-counter-badge');
+      const hintBox = document.getElementById('hint-box');
+
+      hintCounter.textContent = guesserData.solved
+        ? `Solved in ${attemptsMade}/${MAX_ATTEMPTS}`
+        : `Attempt ${currentAttemptNumber}/${MAX_ATTEMPTS}`;
+
+      if (isUnlocked) {
+        hintIcon.textContent = '💡';
+        hintLabel.textContent = `${secretOwnerData.nickname}'s Hint (Unlocked!)`;
+        hintLabel.className = 'block text-xs uppercase tracking-wider font-bold text-emerald-300';
+        hintBox.className = 'w-full glass-panel rounded-2xl px-4 sm:px-5 py-3 border border-emerald-400/55 bg-emerald-950/35 flex items-center justify-between gap-3';
+        hintContent.textContent = secretOwnerData.hint
+          ? `"${secretOwnerData.hint}"`
+          : 'No hint was provided for this word.';
+        hintContent.className = 'text-sm sm:text-base font-bold text-white';
+      } else {
+        const remaining = 2 - attemptsMade;
+        hintIcon.textContent = '🔒';
+        hintLabel.textContent = 'Hint — Locked';
+        hintLabel.className = 'block text-xs uppercase tracking-wider font-bold text-amber-300';
+        hintBox.className = 'w-full glass-panel rounded-2xl px-4 sm:px-5 py-3 border border-amber-400/35 flex items-center justify-between gap-3';
+        hintContent.textContent = `Hint locked until attempt #3 (${remaining} more ${remaining === 1 ? 'attempt' : 'attempts'} needed)`;
+        hintContent.className = 'text-sm sm:text-base text-slate-200';
+      }
+    }
+
+    function renderBoardGrid(guesserRole, guesserData, targetWord) {
+      const boardEl = document.getElementById('wordle-board');
+      const wordLen = targetWord.length;
+      const guesses = guesserData.guesses || [];
+
+      // Dynamic CSS custom property so tiles fill viewport height & width cleanly on both mobile & desktop
+      const dynamicTileSize = wordLen === 6
+        ? 'clamp(38px, min(12.5vw, 6.2dvh), 68px)'
+        : 'clamp(44px, min(14.5vw, 6.6dvh), 76px)';
+
+      boardEl.style.setProperty('--tile-size', dynamicTileSize);
+      boardEl.style.gridTemplateColumns = `repeat(${wordLen}, minmax(0, 1fr))`;
+      boardEl.innerHTML = '';
+
+      const shouldAnimateRow = guesses.length - 1 > lastAnimatedRow[guesserRole];
+      if (shouldAnimateRow) {
+        lastAnimatedRow[guesserRole] = guesses.length - 1;
+      }
+
+      for (let row = 0; row < MAX_ATTEMPTS; row++) {
+        const submittedGuess = guesses[row];
+        const isCurrentActiveRow =
+          row === guesses.length &&
+          boardViewMode === 'mine' &&
+          !isPlayerFinished(guesserData) &&
+          roomState.status === 'playing';
+
+        let evalStates = null;
+        if (submittedGuess) {
+          evalStates = evaluateGuess(submittedGuess, targetWord);
+        }
+
+        for (let col = 0; col < wordLen; col++) {
+          const tile = document.createElement('div');
+          let letter = '';
+          let stateClass = 'state-empty';
+          let animClass = '';
+
+          if (submittedGuess) {
+            letter = submittedGuess[col] || '';
+            stateClass = `state-${evalStates[col]}`;
+            if (shouldAnimateRow && row === guesses.length - 1) {
+              animClass = 'animate-flip';
+              tile.style.animationDelay = `${col * 70}ms`;
+            }
+          } else if (isCurrentActiveRow) {
+            letter = currentGuess[col] || '';
+            stateClass = letter ? 'state-filled' : 'state-empty';
+            if (letter && col === currentGuess.length - 1) {
+              animClass = 'animate-pop';
+            }
+          }
+
+          tile.className = `wordle-tile ${stateClass} ${animClass} rounded-lg sm:rounded-xl`;
+          tile.textContent = letter;
+          boardEl.appendChild(tile);
+        }
+      }
+    }
+
+    function renderVirtualKeyboard(guesserData, targetWord) {
+      const kbContainer = document.getElementById('virtual-keyboard');
+      const rows = [
+        ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+        ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+        ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
+      ];
+
+      const letterStatuses = {};
+      const priority = { correct: 3, present: 2, absent: 1 };
+
+      (guesserData.guesses || []).forEach(guess => {
+        const res = evaluateGuess(guess, targetWord);
+        guess.split('').forEach((char, idx) => {
+          const st = res[idx];
+          if (!letterStatuses[char] || priority[st] > priority[letterStatuses[char]]) {
+            letterStatuses[char] = st;
+          }
+        });
+      });
+
+      const canInteract = isMyTurnToPlay() && boardViewMode === 'mine';
+
+      kbContainer.innerHTML = '';
+      rows.forEach(rowKeys => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'flex justify-center gap-1 sm:gap-2 w-full';
+
+        rowKeys.forEach(key => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.disabled = !canInteract;
+          btn.onclick = () => handleKeyInput(key);
+
+          const isAction = key === 'ENTER' || key === '⌫';
+          const status = letterStatuses[key];
+
+          let colorClasses = 'bg-slate-800/95 hover:bg-slate-700 text-white border-white/25';
+          if (status === 'correct') {
+            colorClasses = 'bg-emerald-500 text-white border-emerald-300 shadow-emerald-950/50';
+          } else if (status === 'present') {
+            colorClasses = 'bg-amber-400 text-slate-950 border-amber-200';
+          } else if (status === 'absent') {
+            colorClasses = 'bg-slate-950/90 text-slate-500 border-white/10';
+          } else if (key === 'ENTER') {
+            colorClasses = 'bg-sky-500/85 hover:bg-sky-400 text-white border-sky-300/45';
+          }
+
+          btn.className = `kb-key ${
+            isAction ? 'px-2.5 sm:px-5 text-[11px] sm:text-base flex-[1.4] max-w-[86px]' : 'flex-1 max-w-[58px] text-sm sm:text-lg'
+          } h-11 sm:h-14 rounded-lg sm:rounded-xl font-bold border shadow flex items-center justify-center ${colorClasses} ${
+            !canInteract ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+          }`;
+          btn.textContent = key;
+          rowDiv.appendChild(btn);
+        });
+
+        kbContainer.appendChild(rowDiv);
+      });
+    }
+
+    // =========================================================================
+    // 10. KEYBOARD INPUT (PHYSICAL & VIRTUAL) & GUESS SUBMISSION
+    // =========================================================================
+    document.addEventListener('keydown', (e) => {
+      if (!roomState || roomState.status !== 'playing') return;
+      if (document.getElementById('screen-game').classList.contains('hidden')) return;
+
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleKeyInput('ENTER');
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleKeyInput('⌫');
+      } else if (/^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        handleKeyInput(e.key.toUpperCase());
+      }
+    });
+
+    async function handleKeyInput(key) {
+      if (!isMyTurnToPlay()) {
+        showToast('Please wait for your turn!', 'warning');
+        return;
+      }
+
+      if (boardViewMode !== 'mine') {
+        boardViewMode = 'mine';
+      }
+
+      const activeRole = getActiveViewerRole();
+      const oppRole = activeRole === 'p1' ? 'p2' : 'p1';
+      const targetWord = roomState[oppRole].secretWord;
+      const requiredLen = targetWord.length;
+
+      if (key === '⌫') {
+        if (currentGuess.length > 0) {
+          currentGuess = currentGuess.slice(0, -1);
+          renderGameUI();
+        }
+        return;
+      }
+
+      if (key === 'ENTER') {
+        if (currentGuess.length !== requiredLen) {
+          showToast(`The word must be ${requiredLen} letters long!`, 'warning');
+          shakeActiveRow();
+          return;
+        }
+        await submitGuess(activeRole, oppRole, currentGuess);
+        return;
+      }
+
+      if (/^[A-Z]$/.test(key) && currentGuess.length < requiredLen) {
+        currentGuess += key;
+        renderGameUI();
+      }
+    }
+
+    function shakeActiveRow() {
+      const board = document.getElementById('wordle-board');
+      board.classList.remove('animate-shake');
+      void board.offsetWidth;
+      board.classList.add('animate-shake');
+    }
+
+    async function submitGuess(activeRole, oppRole, guessWord) {
+      const playerObj = { ...roomState[activeRole] };
+      const oppObj = roomState[oppRole];
+      const targetWord = oppObj.secretWord;
+
+      const updatedGuesses = [...(playerObj.guesses || []), guessWord];
+      const isSolved = guessWord === targetWord;
+      const isOutOfAttempts = !isSolved && updatedGuesses.length >= MAX_ATTEMPTS;
+      const isNowFinished = isSolved || isOutOfAttempts;
+
+      playerObj.guesses = updatedGuesses;
+      playerObj.solved = isSolved;
+      playerObj.outOfAttempts = isOutOfAttempts;
+      playerObj.finished = isNowFinished;
+
+      // END-OF-GAME RULE:
+      // The match ONLY ends when BOTH players have finished (`p1.finished && p2.finished`).
+      // If one player finishes while the other is still playing, the turn stays with
+      // the remaining active player until they also solve their word or use all 6 attempts.
+      const oppAlreadyFinished = isPlayerFinished(oppObj);
+      const bothPlayersFinished = isNowFinished && oppAlreadyFinished;
+
+      const nextStatus = bothPlayersFinished ? 'finished' : 'playing';
+      const nextTurn = bothPlayersFinished
+        ? activeRole
+        : (oppAlreadyFinished ? activeRole : oppRole);
+
+      currentGuess = '';
+
+      if (isSolved && !bothPlayersFinished) {
+        showToast(`🎉 Awesome ${playerObj.nickname}! You solved "${targetWord}"! Waiting for ${oppObj.nickname} to finish...`, 'success');
+      } else if (isSolved && bothPlayersFinished) {
+        showToast(`🎉 You solved "${targetWord}"! Both players finished!`, 'success');
+      } else if (isOutOfAttempts && !bothPlayersFinished) {
+        showToast(`Out of attempts (${MAX_ATTEMPTS}/${MAX_ATTEMPTS})! Waiting for ${oppObj.nickname} to finish...`, 'error');
+      } else if (updatedGuesses.length === 2) {
+        showToast('💡 Hint unlocked for your 3rd attempt!', 'info');
+      }
+
+      if (gameMode === 'local') {
+        roomState[activeRole] = playerObj;
+        roomState.status = nextStatus;
+        roomState.currentTurn = nextTurn;
+        renderGameUI();
+        return;
+      }
+
+      try {
+        await updateDoc(getRoomDocRef(roomCode), {
+          [activeRole]: playerObj,
+          status: nextStatus,
+          currentTurn: nextTurn
+        });
+      } catch (err) {
+        console.error(err);
+        showToast('Error submitting guess. Check your connection.', 'error');
+      }
+    }
+
+    // =========================================================================
+    // 11. FINAL RESULTS MODAL & PLAY AGAIN (SAME ROOM)
+    // =========================================================================
+    function showGameOverModal() {
+      const p1 = roomState.p1;
+      const p2 = roomState.p2;
+
+      const modal = document.getElementById('modal-gameover');
+      modal.classList.remove('hidden');
+
+      const titleEl = document.getElementById('gameover-title');
+      const subEl = document.getElementById('gameover-subtitle');
+      const emojiEl = document.getElementById('gameover-emoji');
+
+      // Determine winner based on solved status & fewer attempts
+      if (p1.solved && !p2.solved) {
+        emojiEl.textContent = '🏆';
+        titleEl.textContent = `${p1.nickname} Wins!`;
+        subEl.textContent = `Solved the secret word in ${p1.guesses.length} ${p1.guesses.length === 1 ? 'attempt' : 'attempts'}!`;
+      } else if (p2.solved && !p1.solved) {
+        emojiEl.textContent = '🏆';
+        titleEl.textContent = `${p2.nickname} Wins!`;
+        subEl.textContent = `Solved the secret word in ${p2.guesses.length} ${p2.guesses.length === 1 ? 'attempt' : 'attempts'}!`;
+      } else if (p1.solved && p2.solved) {
+        if (p1.guesses.length < p2.guesses.length) {
+          emojiEl.textContent = '🏆';
+          titleEl.textContent = `${p1.nickname} Wins!`;
+          subEl.textContent = `Both solved their words, but ${p1.nickname} took fewer attempts (${p1.guesses.length} vs ${p2.guesses.length})!`;
+        } else if (p2.guesses.length < p1.guesses.length) {
+          emojiEl.textContent = '🏆';
+          titleEl.textContent = `${p2.nickname} Wins!`;
+          subEl.textContent = `Both solved their words, but ${p2.nickname} took fewer attempts (${p2.guesses.length} vs ${p1.guesses.length})!`;
+        } else {
+          emojiEl.textContent = '🤝';
+          titleEl.textContent = "It's a Tie!";
+          subEl.textContent = `Both players solved their words in ${p1.guesses.length} attempts!`;
+        }
+      } else {
+        emojiEl.textContent = '😅';
+        titleEl.textContent = 'Both Missed This Round!';
+        subEl.textContent = 'Check out both secret words and hints below.';
+      }
+
+      // Populate player summary cards
+      document.getElementById('res-p1-avatar').src = p1.avatar;
+      document.getElementById('res-p1-name').textContent = p1.nickname;
+      document.getElementById('res-p1-word').textContent = p1.secretWord;
+      document.getElementById('res-p1-hint').textContent = p1.hint ? `"${p1.hint}"` : 'No hint provided';
+      document.getElementById('res-p1-score').textContent = p1.solved
+        ? `✅ Solved opponent's word in ${p1.guesses.length}/${MAX_ATTEMPTS}`
+        : `❌ Out of attempts (${MAX_ATTEMPTS}/${MAX_ATTEMPTS})`;
+
+      document.getElementById('res-p2-avatar').src = p2.avatar;
+      document.getElementById('res-p2-name').textContent = p2.nickname;
+      document.getElementById('res-p2-word').textContent = p2.secretWord;
+      document.getElementById('res-p2-hint').textContent = p2.hint ? `"${p2.hint}"` : 'No hint provided';
+      document.getElementById('res-p2-score').textContent = p2.solved
+        ? `✅ Solved opponent's word in ${p2.guesses.length}/${MAX_ATTEMPTS}`
+        : `❌ Out of attempts (${MAX_ATTEMPTS}/${MAX_ATTEMPTS})`;
+    }
+
+    window.handlePlayAgain = async function() {
+      document.getElementById('modal-gameover').classList.add('hidden');
+      currentGuess = '';
+      lastAnimatedRow = { p1: -1, p2: -1 };
+
+      if (gameMode === 'local') {
+        localSetupStep = 'p1';
+        roomState.status = 'setup';
+        roomState.p1.ready = false;
+        roomState.p1.guesses = [];
+        roomState.p1.solved = false;
+        roomState.p1.outOfAttempts = false;
+        roomState.p1.finished = false;
+        roomState.p2.ready = false;
+        roomState.p2.guesses = [];
+        roomState.p2.solved = false;
+        roomState.p2.outOfAttempts = false;
+        roomState.p2.finished = false;
+        openSetupScreen('Player 1 — New Secret Word');
+        return;
+      }
+
+      try {
+        await updateDoc(getRoomDocRef(roomCode), {
+          status: 'setup',
+          currentTurn: 'p1',
+          roundNumber: (roomState.roundNumber || 1) + 1,
+          'p1.ready': false,
+          'p1.guesses': [],
+          'p1.solved': false,
+          'p1.outOfAttempts': false,
+          'p1.finished': false,
+          'p1.secretWord': '',
+          'p1.hint': '',
+          'p2.ready': false,
+          'p2.guesses': [],
+          'p2.solved': false,
+          'p2.outOfAttempts': false,
+          'p2.finished': false,
+          'p2.secretWord': '',
+          'p2.hint': ''
+        });
+
+        openSetupScreen(myRole === 'p1' ? 'Player 1 — Next Round' : 'Player 2 — Next Round');
+      } catch (err) {
+        console.error(err);
+        showToast('Error starting next round.', 'error');
+      }
+    };
+
+    window.confirmLeaveRoom = function() {
+      const modal = document.getElementById('modal-confirm');
+      modal.classList.remove('hidden');
+      document.getElementById('confirm-yes-btn').onclick = () => {
+        closeConfirmModal();
+        resetToHome();
+      };
+    };
+
+    window.closeConfirmModal = function() {
+      document.getElementById('modal-confirm').classList.add('hidden');
+    };
+
+    function resetToHome() {
+      if (unsubscribeRoom) {
+        unsubscribeRoom();
+        unsubscribeRoom = null;
+      }
+      roomCode = null;
+      roomState = null;
+      myRole = null;
+      currentGuess = '';
+      document.getElementById('modal-gameover').classList.add('hidden');
+      showScreen('screen-home');
+    }
+
+    // =========================================================================
+    // 12. INITIALIZE ON PAGE LOAD
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAvatarSelector();
+      initFirebase();
+    });
+  </script>
+</body>
+</html>
